@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>3D Arena</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <main id="game">
+    <canvas id="arena"></canvas>
+    <header class="hud">
+      <strong>3D Arena</strong>
+      <span>Puntos: <b id="score">0</b></span>
+      <span>Estado: <b id="status">Conectando</b></span>
+    </header>
+    <div id="message" role="status"></div>
+  </main>
+
+  <div class="touch-controls" aria-label="Controles táctiles">
+    <button data-control="left" aria-label="Izquierda">←</button>
+    <button data-control="forward" aria-label="Avanzar">↑</button>
+    <button data-control="back" aria-label="Retroceder">↓</button>
+    <button data-control="right" aria-label="Derecha">→</button>
+    <button class="jump" data-control="jump" aria-label="Saltar">Saltar</button>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/three.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>
