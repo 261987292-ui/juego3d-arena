@@ -3,26 +3,37 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>3D Arena</title>
+  <title>Freddy's Pizza - Arena 3D</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
   <main id="game">
     <canvas id="arena"></canvas>
-    <header class="hud">
-      <strong>3D Arena</strong>
-      <span>Puntos: <b id="score">0</b></span>
-      <span>Estado: <b id="status">Conectando</b></span>
+    <header class="security-hud">
+      <div class="hud-brand"><span class="camera-dot"></span> PIZZERÍA 1987</div>
+      <div class="hud-grid">
+        <span>Turno <b id="turn">12:00 AM</b></span>
+        <span>Salud <b id="health">100%</b></span>
+        <span>Batería <b id="battery">100%</b></span>
+        <span>Récord <b id="record">0</b></span>
+        <span>Fusibles <b id="fuses">0/3</b></span>
+        <span>Munición <b id="ammo">12/24</b></span>
+      </div>
     </header>
+    <aside id="enemy-alert" aria-live="polite">Movimiento detectado</aside>
     <div id="message" role="status"></div>
+    <div id="gameover" class="game-screen"><b>FIN DEL TURNO</b><span>Recarga la página para continuar</span></div>
+    <div id="victory" class="game-screen victory"><b>6:00 AM</b><span>¡Sobreviviste la noche!</span></div>
   </main>
 
   <div class="touch-controls" aria-label="Controles táctiles">
-    <button data-control="left" aria-label="Izquierda">←</button>
-    <button data-control="forward" aria-label="Avanzar">↑</button>
-    <button data-control="back" aria-label="Retroceder">↓</button>
-    <button data-control="right" aria-label="Derecha">→</button>
-    <button class="jump" data-control="jump" aria-label="Saltar">Saltar</button>
+    <button class="touch-button" data-control="left" aria-label="Izquierda">←</button>
+    <button class="touch-button" data-control="forward" aria-label="Avanzar">▲</button>
+    <button class="touch-button" data-control="back" aria-label="Retroceder">▼</button>
+    <button class="touch-button" data-control="right" aria-label="Derecha">→</button>
+    <button class="touch-button jump" data-control="jump" aria-label="Saltar">SALTAR</button>
+    <button class="touch-button sprint" data-control="sprint" aria-label="Correr">CORRER</button>
+    <button class="touch-button shoot" data-control="shoot" aria-label="Disparar">DISPARAR</button>
   </div>
 
   <script src="{{ url_for('static', filename='js/three.min.js') }}"></script>

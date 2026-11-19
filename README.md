@@ -1,6 +1,5 @@
 # Juego 3D Arena
-
-Aplicación web con Flask y Three.js para un arena 3D simple.
+Aplicación web con Flask y Three.js para una pizzería nocturna inspirada en seguridad arcade.
 
 ## Arquitectura
 
@@ -9,6 +8,9 @@ Aplicación web con Flask y Three.js para un arena 3D simple.
 - `static/css/style.css`: diseño responsivo y controles táctiles.
 - `static/js/three.min.js`: biblioteca Three.js r128 local.
 - `static/js/game.js`: escena, movimiento, salto y objetivos.
+- Cuatro animatrónicos 3D: Freddy, Bonnie, Chica y Foxy.
+- Laberinto con suelo de tablero, paredes decoradas, mesas y lámparas cálidas.
+- Linterna, batería, munición, fusibles, radar de movimiento y controles táctiles.
 
 ## Ejecutar localmente
 

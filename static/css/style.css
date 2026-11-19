@@ -1,6 +1,9 @@
 :root {
   color-scheme: dark;
-  font-family: Inter, system-ui, sans-serif;
+  font-family: "Courier New", monospace;
+  --green: #86efac;
+  --amber: #fbbf24;
+  --red: #ef4444;
 }
 
 * {
@@ -12,7 +15,7 @@ html, body, #game {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: #090d18;
+  background: #15100a;
 }
 
 #arena {
@@ -22,24 +25,45 @@ html, body, #game {
   touch-action: none;
 }
 
-.hud {
+.security-hud {
   position: fixed;
   inset: env(safe-area-inset-top) 12px auto 12px;
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 10px;
-  background: rgba(9, 13, 24, 0.78);
+  padding: 8px 12px;
+  border: 2px solid rgba(134, 239, 172, 0.45);
+  border-radius: 4px;
+  background: rgba(10, 14, 12, 0.88);
   backdrop-filter: blur(8px);
   pointer-events: none;
+  box-shadow: 0 0 18px rgba(134, 239, 172, 0.12);
 }
+
+.hud-brand { color: var(--green); letter-spacing: 2px; white-space: nowrap; }
+.camera-dot { display:inline-block; width:8px; height:8px; margin-right:5px; border-radius:50%; background:var(--red); box-shadow:0 0 8px var(--red); }
+.hud-grid { display:grid; grid-template-columns: repeat(5, auto); gap:10px; font-size:12px; }
+.hud-grid b { color:var(--green); }
+
+#enemy-alert {
+  position: fixed;
+  right: 12px;
+  bottom: 90px;
+  max-width: 180px;
+  padding: 8px 10px;
+  border: 1px solid rgba(239,68,68,.55);
+  background: rgba(30,8,8,.82);
+  color:#fecaca;
+  opacity:0;
+  transform: translateY(8px);
+  transition: .2s ease;
+}
+#enemy-alert.visible { opacity:1; transform:translateY(0); }
 
 #message {
   position: fixed;
   left: 50%;
-  bottom: 120px;
+  bottom: 104px;
   transform: translateX(-50%);
   color: #fff;
   text-shadow: 0 2px 8px #000;
@@ -50,8 +74,8 @@ html, body, #game {
   left: 50%;
   bottom: env(safe-area-inset-bottom, 12px);
   display: grid;
-  grid-template-columns: repeat(3, 58px);
-  grid-template-rows: repeat(2, 58px);
+  grid-template-columns: repeat(3, 64px);
+  grid-template-rows: repeat(3, 58px);
   gap: 8px;
   transform: translateX(-50%);
   touch-action: none;
@@ -60,20 +84,47 @@ html, body, #game {
 .touch-controls button {
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 12px;
-  background: rgba(18, 24, 42, 0.82);
+  background: rgba(14, 24, 18, 0.86);
   color: #fff;
   font-size: 22px;
 }
 
-.touch-controls [data-control="left"] { grid-column: 1; grid-row: 2; }
-.touch-controls [data-control="forward"] { grid-column: 2; grid-row: 1; }
-.touch-controls [data-control="back"] { grid-column: 2; grid-row: 2; }
-.touch-controls [data-control="right"] { grid-column: 3; grid-row: 2; }
-.touch-controls .jump { grid-column: 3; grid-row: 1; font-size: 14px; }
+.touch-controls [data-control="left"] { grid-column: 1; grid-row: 3; }
+.touch-controls [data-control="forward"] { grid-column: 2; grid-row: 2; }
+.touch-controls [data-control="back"] { grid-column: 2; grid-row: 3; }
+.touch-controls [data-control="right"] { grid-column: 3; grid-row: 3; }
+.touch-controls .jump { grid-column: 1; grid-row: 2; font-size: 11px; }
+.touch-controls .sprint { grid-column: 3; grid-row: 2; font-size: 11px; }
+.touch-controls .shoot { grid-column: 3; grid-row: 1; font-size: 11px; border-color:rgba(239,68,68,.65); }
+
+.game-screen {
+  position: fixed;
+  inset: 0;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  background:rgba(18,2,2,.78);
+  color:#fecaca;
+  font-size: clamp(26px, 8vw, 72px);
+  text-shadow:0 0 24px #ef4444;
+  z-index:20;
+}
+.game-screen span { font-size:16px; color:#fff; }
+.game-screen.victory { background:rgba(3,18,12,.78); color:#86efac; text-shadow:0 0 24px #22c55e; }
 
 @media (min-width: 900px) {
   .touch-controls {
     left: 16px;
     transform: none;
   }
+
+  @media (max-width: 700px) {
+    .security-hud { flex-direction:column; gap:4px; }
+    .hud-grid { grid-template-columns:repeat(3, auto); }
+    .hud-grid span:nth-child(n+4) { display:none; }
+  }
 }
+.touch-controls button:active,
+.touch-controls button.active { background: rgba(55, 145, 93, 0.9); }
