@@ -47,18 +47,33 @@
   scene.add(new THREE.AmbientLight(0xffe8d6, 0.55));
   scene.add(new THREE.HemisphereLight(0xffeedd, 0x1e1e28, 0.4));
 
+  function findOpenSpawn() {
+    for (let r = 1; r < map.length - 1; r++) {
+      for (let c = 1; c < map[r].length - 1; c++) {
+        if (map[r][c] === 0) {
+          return { c: c, r: r };
+        }
+      }
+    }
+    return { c: 1, r: 1 };
+  }
+  const spawn = findOpenSpawn();
   const player = {
-    x: 1.5 * TILE,
-    z: 1.5 * TILE,
+    x: spawn.c * TILE,
+    z: spawn.r * TILE,
     y: 1.68,
+    position: null,
     yaw: 0,
     targetYaw: 0,
     pitch: 0,
     targetPitch: 0,
     radius: 0.55,
     stamina: 100,
-    health: 100
+    health: 100,
+    verticalVelocity: 0,
+    grounded: true
   };
+  player.position = new THREE.Vector3(player.x, player.y, player.z);
 
   const exitPos = { x: 13 * TILE, z: 13 * TILE };
   const batteryPickups = [];
@@ -223,6 +238,9 @@
   flashlight.castShadow = true;
   scene.add(flashlight);
   scene.add(flashlight.target);
+  const muzzleFlash = new THREE.PointLight(0xffc36b, 0, 7);
+  muzzleFlash.position.copy(camera.position);
+  scene.add(muzzleFlash);
 
   function boxMesh(width, height, depth, color, emissive) {
     const mesh = new THREE.Mesh(
@@ -368,12 +386,12 @@
       });
     }
 
-    group.scale.setScalar(0.78);
+    group.scale.setScalar(0.58);
     return group;
   }
 
   const enemyData = [
-    { skin: "freddy", x: 11 * TILE, z: 3 * TILE, targetX: 11 * TILE, targetZ: 3 * TILE },
+    { skin: "freddy", x: 7 * TILE, z: 3 * TILE, targetX: 7 * TILE, targetZ: 3 * TILE },
     { skin: "bonnie", x: 3 * TILE, z: 9 * TILE, targetX: 3 * TILE, targetZ: 9 * TILE },
     { skin: "chica", x: 11 * TILE, z: 11 * TILE, targetX: 11 * TILE, targetZ: 11 * TILE },
     { skin: "foxy", x: 13 * TILE, z: 1 * TILE, targetX: 13 * TILE, targetZ: 1 * TILE },
@@ -431,7 +449,7 @@
   let fusesCollected = 0;
   let score = 0;
   let magazine = 12;
-  let reserveAmmo = 24;
+  let reserveAmmo = 21;
   let canShoot = true;
   let isSprinting = false;
   const controls = Object.create(null);
@@ -490,7 +508,7 @@
   }
 
   controlToggle.addEventListener("pointerdown", function (event) {
-    event.preventEventDefault ? event.preventEventDefault() : event.preventDefault();
+    event.preventDefault();
   });
   controlToggle.addEventListener("click", function () {
     controlMode = controlMode === "joystick" ? "arrows" : "joystick";
@@ -576,7 +594,8 @@
         showNotice(flashlightOn ? "Linterna encendida" : "Linterna apagada");
       }
       if (action === "jump") {
-        player.pitch = THREE.MathUtils.clamp(player.pitch - 0.02, -0.7, 0.7);
+        controls.jump = true;
+        button.classList.add("active");
       }
       if (action === "sprint") {
         controls.sprint = true;
@@ -584,10 +603,10 @@
       }
     };
     button.addEventListener("pointerdown", runAction);
-    if (action === "sprint") {
+    if (action === "sprint" || action === "jump") {
       ["pointerup","pointercancel","pointerleave"].forEach(function (type) {
         button.addEventListener(type, function () {
-          controls.sprint = false;
+          controls[action] = false;
           button.classList.remove("active");
         });
       });
@@ -628,6 +647,24 @@
     showNotice.timer = setTimeout(function () { messageNode.textContent = ""; }, 2200);
   }
 
+  function lineHitsWall(start, end) {
+    for (let i = 0; i < walls.length; i++) {
+      const wall = walls[i];
+      const left = wall.x - wall.half;
+      const right = wall.x + wall.half;
+      const top = wall.z - wall.half;
+      const bottom = wall.z + wall.half;
+      const steps = 24;
+      for (let s = 1; s < steps; s++) {
+        const t = s / steps;
+        const x = start.x + (end.x - start.x) * t;
+        const z = start.z + (end.z - start.z) * t;
+        if (x >= left && x <= right && z >= top && z <= bottom) return true;
+      }
+    }
+    return false;
+  }
+
   function fireEnemyShot() {
     if (isGameOver || !canShoot) return;
     if (magazine <= 0) {
@@ -644,8 +681,14 @@
     canShoot = false;
     setTimeout(function () { canShoot = true; }, 260);
     ammoNode.textContent = magazine + "/" + reserveAmmo;
-
     const lookDir = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation).normalize();
+    muzzleFlash.position.copy(camera.position).add(lookDir);
+    muzzleFlash.intensity = 5;
+    setTimeout(function () { muzzleFlash.intensity = 0; }, 55);
+
+    const raycaster = new THREE.Raycaster(camera.position, lookDir, 0, 18);
+    const rayHits = raycaster.intersectObjects(enemies.map(function (enemy) { return enemy.group; }), true);
+
     let target = null;
     let nearest = 18;
     enemies.forEach(function (enemy) {
@@ -653,7 +696,8 @@
       const distance = toEnemy.length();
       if (distance >= nearest) return;
       const direction = toEnemy.normalize();
-      if (lookDir.dot(direction) > 0.94) {
+      if (lookDir.dot(direction) > 0.94 &&
+          !lineHitsWall(player.position, enemy.group.position)) {
         target = enemy;
         nearest = distance;
       }
@@ -704,10 +748,26 @@
     player.yaw += (player.targetYaw - player.yaw) * Math.min(1, 12 * dt);
     player.pitch += (player.targetPitch - player.pitch) * Math.min(1, 12 * dt);
 
+    if (isPressed("jump") && player.grounded) {
+      player.verticalVelocity = 4.8;
+      player.grounded = false;
+      controls.jump = false;
+    }
+    if (!player.grounded) {
+      player.verticalVelocity -= 11.5 * dt;
+      player.y += player.verticalVelocity * dt;
+      if (player.y <= 1.68) {
+        player.y = 1.68;
+        player.verticalVelocity = 0;
+        player.grounded = true;
+      }
+    }
+
     const movingInput = isPressed("KeyW") || isPressed("ArrowUp") || isPressed("forward") ||
       isPressed("KeyS") || isPressed("ArrowDown") || isPressed("back") ||
       isPressed("KeyA") || isPressed("ArrowLeft") || isPressed("left") ||
-      isPressed("KeyD") || isPressed("ArrowRight") || isPressed("right");
+      isPressed("KeyD") || isPressed("ArrowRight") || isPressed("right") ||
+      (controlMode === "joystick" && (Math.abs(joystickVector.x) > 0.12 || Math.abs(joystickVector.y) > 0.12));
     isSprinting = isPressed("ShiftLeft") || isPressed("ShiftRight") || isPressed("sprint");
     if (isSprinting && movingInput) player.stamina = Math.max(0, player.stamina - 24 * dt);
     else player.stamina = Math.min(100, player.stamina + 14 * dt);
@@ -730,6 +790,7 @@
     const dz = (fz * forward + rz * lateral) * speed;
     if (canOccupy(player.x + dx, player.z, player.radius)) player.x += dx;
     if (canOccupy(player.x, player.z + dz, player.radius)) player.z += dz;
+    player.position.set(player.x, player.y, player.z);
 
     const bob = movingInput ? Math.sin(elapsedSeconds * (isSprinting ? 13 : 9)) * 0.045 : 0;
     camera.position.set(player.x, player.y + bob, player.z);
