@@ -37,13 +37,15 @@
 
   const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.05, 100);
   const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.92;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-  scene.add(new THREE.AmbientLight(0xfff5e4, 1.35));
-  scene.add(new THREE.HemisphereLight(0xfff8ee, 0x3a3a4a, 0.9));
+  scene.add(new THREE.AmbientLight(0xffe8d6, 0.55));
+  scene.add(new THREE.HemisphereLight(0xffeedd, 0x1e1e28, 0.4));
 
   const player = {
     x: 1.5 * TILE,
@@ -152,7 +154,7 @@
     );
     fixture.position.set(x, 3.15, z);
     scene.add(fixture);
-    const light = new THREE.PointLight(0xffd9a3, 1.7, 8.5, 1.8);
+    const light = new THREE.PointLight(0xffd9a3, 0.65, 8.5, 2);
     light.position.set(x, 3, z);
     light.castShadow = false;
     scene.add(light);
@@ -237,7 +239,8 @@
       freddy: { body: 0x7a4a24, accent: 0x171717, eye: 0x63d9ff },
       bonnie: { body: 0x6d5d9c, accent: 0xe11d48, eye: 0xe879f9 },
       chica: { body: 0xf3c623, accent: 0xffa928, eye: 0x67e8f9 },
-      foxy: { body: 0xb62b2b, accent: 0x6b7280, eye: 0xffd84d }
+      foxy: { body: 0xb62b2b, accent: 0x6b7280, eye: 0xffd84d },
+      springtrap: { body: 0x9b9347, accent: 0x552455, eye: 0xeef7ff }
     };
     const c = colors[skin];
     const torso = boxMesh(1.15, 1.45, 0.72, c.body);
@@ -251,13 +254,22 @@
     muzzle.position.set(0, 2.48, 0.47);
     group.add(muzzle);
 
+    const jaw = new THREE.Group();
+    jaw.position.set(0, 2.28, 0.47);
+    const jawPlate = boxMesh(0.64, 0.16, 0.12, 0x5a3c2c);
+    jaw.add(jawPlate);
+    group.add(jaw);
+
+    const eyeMeshes = [];
     [-0.5, 0.5].forEach(function (x) {
       const eye = new THREE.Mesh(
         new THREE.SphereGeometry(0.09, 12, 8),
         new THREE.MeshBasicMaterial({ color: c.eye })
       );
       eye.position.set(x * 0.58, 2.73, 0.43);
+      eye.userData.normalColor = c.eye;
       group.add(eye);
+      eyeMeshes.push(eye);
     });
 
     function limb(width, height, depth, x, y, z) {
@@ -270,7 +282,7 @@
     const armR = limb(0.28, 1.25, 0.28, 0.78, 1.38, 0);
     const legL = limb(0.34, 0.95, 0.34, -0.34, 0.48, 0);
     const legR = limb(0.34, 0.95, 0.34, 0.34, 0.48, 0);
-    group.userData.parts = { armL: armL, armR: armR, legL: legL, legR: legR };
+    group.userData.parts = { armL: armL, armR: armR, legL: legL, legR: legR, jaw: jaw, eyes: eyeMeshes };
 
     if (skin === "freddy") {
       const hatTop = boxMesh(0.72, 0.18, 0.72, 0x151515);
@@ -338,6 +350,24 @@
       group.rotation.z = -0.08;
     }
 
+    if (skin === "springtrap") {
+      [-0.38, 0.38].forEach(function (x) {
+        const ear = boxMesh(0.18, 1.18, 0.18, c.body);
+        ear.position.set(x, 3.48, 0);
+        ear.rotation.z = x > 0 ? -0.24 : 0.08;
+        group.add(ear);
+      });
+      const bow = boxMesh(0.48, 0.16, 0.16, c.accent);
+      bow.position.set(0, 1.92, 0.38);
+      group.add(bow);
+      [-0.38, 0.38].forEach(function (x) {
+        const damage = boxMesh(0.12, 0.55, 0.08, 0x282828);
+        damage.position.set(x, 1.48, 0.37);
+        damage.rotation.z = x > 0 ? 0.18 : -0.18;
+        group.add(damage);
+      });
+    }
+
     group.scale.setScalar(0.78);
     return group;
   }
@@ -346,7 +376,8 @@
     { skin: "freddy", x: 11 * TILE, z: 3 * TILE, targetX: 11 * TILE, targetZ: 3 * TILE },
     { skin: "bonnie", x: 3 * TILE, z: 9 * TILE, targetX: 3 * TILE, targetZ: 9 * TILE },
     { skin: "chica", x: 11 * TILE, z: 11 * TILE, targetX: 11 * TILE, targetZ: 11 * TILE },
-    { skin: "foxy", x: 13 * TILE, z: 1 * TILE, targetX: 13 * TILE, targetZ: 1 * TILE }
+    { skin: "foxy", x: 13 * TILE, z: 1 * TILE, targetX: 13 * TILE, targetZ: 1 * TILE },
+    { skin: "springtrap", x: 12 * TILE, z: 13 * TILE, targetX: 12 * TILE, targetZ: 13 * TILE }
   ];
   enemyData.forEach(function (data) {
     data.group = buildAnimatronic(data.skin);
@@ -437,6 +468,73 @@
   window.addEventListener("keyup", function (event) {
     keys[event.code] = false;
   });
+  window.addEventListener("contextmenu", function (event) {
+    event.preventDefault();
+  });
+
+  const controlToggle = document.getElementById("control-toggle");
+  const joystickBase = document.getElementById("joystick-base");
+  const joystickStick = document.getElementById("joystick-stick");
+  const dpad = document.getElementById("dpad");
+  let controlMode = localStorage.getItem("juego3d-control") || "joystick";
+  let joystickPointer = null;
+  let joystickVector = { x: 0, y: 0 };
+
+  function applyControlMode() {
+    const joystick = controlMode === "joystick";
+    joystickBase.style.display = joystick ? "block" : "none";
+    dpad.classList.toggle("visible", !joystick);
+    controlToggle.textContent = joystick ? "CONTROL: JOYSTICK" : "CONTROL: FLECHAS";
+    controlToggle.setAttribute("aria-pressed", joystick ? "false" : "true");
+    localStorage.setItem("juego3d-control", controlMode);
+  }
+
+  controlToggle.addEventListener("pointerdown", function (event) {
+    event.preventEventDefault ? event.preventEventDefault() : event.preventDefault();
+  });
+  controlToggle.addEventListener("click", function () {
+    controlMode = controlMode === "joystick" ? "arrows" : "joystick";
+    applyControlMode();
+  });
+  applyControlMode();
+
+  function updateJoystick(event) {
+    const rect = joystickBase.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    let dx = event.clientX - cx;
+    let dy = event.clientY - cy;
+    const max = 44;
+    const distance = Math.hypot(dx, dy);
+    if (distance > max) {
+      dx = dx / distance * max;
+      dy = dy / distance * max;
+    }
+    joystickVector.x = dx / max;
+    joystickVector.y = dy / max;
+    joystickStick.style.transform = "translate(" + dx + "px," + dy + "px)";
+  }
+
+  joystickBase.addEventListener("pointerdown", function (event) {
+    event.preventDefault();
+    joystickPointer = event.pointerId;
+    joystickBase.setPointerCapture && joystickBase.setPointerCapture(event.pointerId);
+    updateJoystick(event);
+  });
+  joystickBase.addEventListener("pointermove", function (event) {
+    if (joystickPointer !== event.pointerId) return;
+    event.preventDefault();
+    updateJoystick(event);
+  });
+  ["pointerup","pointercancel","pointerleave"].forEach(function (type) {
+    joystickBase.addEventListener(type, function (event) {
+      if (joystickPointer !== event.pointerId) return;
+      joystickPointer = null;
+      joystickVector.x = 0;
+      joystickVector.y = 0;
+      joystickStick.style.transform = "translate(0px,0px)";
+    });
+  });
 
   document.querySelectorAll("[data-control]").forEach(function (button) {
     const control = button.dataset.control;
@@ -445,7 +543,6 @@
       button.setPointerCapture && button.setPointerCapture(event.pointerId);
       controls[control] = true;
       button.classList.add("active");
-      if (control === "shoot") fireEnemyShot();
     });
     ["pointerup","pointercancel","pointerleave"].forEach(function (type) {
       button.addEventListener(type, function (event) {
@@ -454,6 +551,47 @@
         button.classList.remove("active");
       });
     });
+  });
+
+  let flashlightOn = true;
+
+  function reloadMagazine() {
+    if (magazine >= 12 || reserveAmmo <= 0) return;
+    const amount = Math.min(12 - magazine, reserveAmmo);
+    magazine += amount;
+    reserveAmmo -= amount;
+    ammoNode.textContent = magazine + "/" + reserveAmmo;
+    showNotice("Cargador recargado");
+  }
+
+  document.querySelectorAll("[data-action]").forEach(function (button) {
+    const action = button.dataset.action;
+    const runAction = function (event) {
+      event.preventDefault();
+      if (action === "shoot") fireEnemyShot();
+      if (action === "reload") reloadMagazine();
+      if (action === "flashlight") {
+        flashlightOn = !flashlightOn;
+        flashlight.intensity = flashlightOn ? 4.8 : 0;
+        showNotice(flashlightOn ? "Linterna encendida" : "Linterna apagada");
+      }
+      if (action === "jump") {
+        player.pitch = THREE.MathUtils.clamp(player.pitch - 0.02, -0.7, 0.7);
+      }
+      if (action === "sprint") {
+        controls.sprint = true;
+        button.classList.add("active");
+      }
+    };
+    button.addEventListener("pointerdown", runAction);
+    if (action === "sprint") {
+      ["pointerup","pointercancel","pointerleave"].forEach(function (type) {
+        button.addEventListener(type, function () {
+          controls.sprint = false;
+          button.classList.remove("active");
+        });
+      });
+    }
   });
 
   let lookPointer = null;
@@ -574,10 +712,17 @@
     if (isSprinting && movingInput) player.stamina = Math.max(0, player.stamina - 24 * dt);
     else player.stamina = Math.min(100, player.stamina + 14 * dt);
 
-    const forward = (isPressed("KeyW") || isPressed("ArrowUp") || isPressed("forward") ? 1 : 0)
+    let forward = (isPressed("KeyW") || isPressed("ArrowUp") || isPressed("forward") ? 1 : 0)
       - (isPressed("KeyS") || isPressed("ArrowDown") || isPressed("back") ? 1 : 0);
-    const lateral = (isPressed("KeyD") || isPressed("ArrowRight") || isPressed("right") ? 1 : 0)
+    let lateral = (isPressed("KeyD") || isPressed("ArrowRight") || isPressed("right") ? 1 : 0)
       - (isPressed("KeyA") || isPressed("ArrowLeft") || isPressed("left") ? 1 : 0);
+    if (controlMode === "joystick") {
+      forward = THREE.MathUtils.clamp(forward - joystickVector.y, -1, 1);
+      lateral = THREE.MathUtils.clamp(lateral + joystickVector.x, -1, 1);
+      if (Math.abs(joystickVector.x) > 0.12) {
+        player.targetYaw -= joystickVector.x * 0.018;
+      }
+    }
     const speed = (isSprinting && player.stamina > 2 ? 5.8 : 3.8) * dt;
     const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
     const rx = Math.cos(player.yaw), rz = -Math.sin(player.yaw);
@@ -661,10 +806,18 @@
         const enemySpeed = (enemy.skin === "foxy" ? 2.4 : 1.7) * dt;
         const nx = enemy.x + (dx / remaining) * enemySpeed;
         const nz = enemy.z + (dz / remaining) * enemySpeed;
-        if (canOccupy(nx, enemy.z, 0.62)) enemy.x = nx;
-        else chooseNextTile(enemy);
-        if (canOccupy(enemy.x, nz, 0.62)) enemy.z = nz;
-        else chooseNextTile(enemy);
+        if (Math.hypot(player.x - nx, player.z - enemy.z) >= 1.45 &&
+            canOccupy(nx, enemy.z, 0.62)) enemy.x = nx;
+        else if (Math.hypot(player.x - nx, player.z - enemy.z) < 1.45) {
+          enemy.targetX = enemy.x;
+          enemy.targetZ = enemy.z;
+        } else chooseNextTile(enemy);
+        if (Math.hypot(player.x - enemy.x, player.z - nz) >= 1.45 &&
+            canOccupy(enemy.x, nz, 0.62)) enemy.z = nz;
+        else if (Math.hypot(player.x - enemy.x, player.z - nz) < 1.45) {
+          enemy.targetX = enemy.x;
+          enemy.targetZ = enemy.z;
+        } else chooseNextTile(enemy);
       }
       enemy.group.position.set(enemy.x, 0, enemy.z);
       enemy.group.rotation.y = Math.atan2(enemy.targetX - enemy.x, enemy.targetZ - enemy.z);
@@ -674,6 +827,14 @@
       parts.armR.rotation.x = -swing;
       parts.legL.rotation.x = -swing;
       parts.legR.rotation.x = swing;
+      if (parts.jaw) {
+        parts.jaw.rotation.x = distance < 8 ? 0.18 + Math.sin(elapsedSeconds * 8) * 0.08 : 0;
+      }
+      if (parts.eyes) {
+        parts.eyes.forEach(function (eye) {
+          eye.material.color.setHex(distance < 8 ? 0xff1717 : eye.userData.normalColor);
+        });
+      }
 
       if (distance < 1.05) {
         health = Math.max(0, health - 18 * dt);

@@ -19,6 +19,9 @@
         <span>Fusibles <b id="fuses">0/3</b></span>
         <span>Munición <b id="ammo">12/24</b></span>
       </div>
+      <button id="control-toggle" class="control-toggle" type="button" aria-pressed="false">
+        CONTROL: JOYSTICK
+      </button>
     </header>
     <aside id="enemy-alert" aria-live="polite">Movimiento detectado</aside>
     <div id="message" role="status"></div>
@@ -26,14 +29,24 @@
     <div id="victory" class="game-screen victory"><b>6:00 AM</b><span>¡Sobreviviste la noche!</span></div>
   </main>
 
-  <div class="touch-controls" aria-label="Controles táctiles">
-    <button class="touch-button" data-control="left" aria-label="Izquierda">←</button>
-    <button class="touch-button" data-control="forward" aria-label="Avanzar">▲</button>
-    <button class="touch-button" data-control="back" aria-label="Retroceder">▼</button>
-    <button class="touch-button" data-control="right" aria-label="Derecha">→</button>
-    <button class="touch-button jump" data-control="jump" aria-label="Saltar">SALTAR</button>
-    <button class="touch-button sprint" data-control="sprint" aria-label="Correr">CORRER</button>
-    <button class="touch-button shoot" data-control="shoot" aria-label="Disparar">DISPARAR</button>
+  <div id="move-pad" class="move-pad" aria-label="Controles de movimiento">
+    <div id="joystick-base" class="joystick-base">
+      <div id="joystick-stick" class="joystick-stick"></div>
+    </div>
+    <div id="dpad" class="dpad" aria-label="Cruceta direccional">
+      <button class="touch-button" data-control="forward" aria-label="Avanzar">▲</button>
+      <button class="touch-button" data-control="left" aria-label="Izquierda">◄</button>
+      <button class="touch-button" data-control="back" aria-label="Retroceder">▼</button>
+      <button class="touch-button" data-control="right" aria-label="Derecha">►</button>
+    </div>
+  </div>
+
+  <div class="action-pad" aria-label="Acciones">
+    <button class="touch-button shoot" data-action="shoot" aria-label="Disparar">DISPARAR</button>
+    <button class="touch-button" data-action="flashlight" aria-label="Linterna">LINTERNA</button>
+    <button class="touch-button sprint" data-action="sprint" aria-label="Correr">CORRER</button>
+    <button class="touch-button" data-action="jump" aria-label="Saltar">SALTAR</button>
+    <button class="touch-button" data-action="reload" aria-label="Recargar">RECARGAR</button>
   </div>
 
   <script src="{{ url_for('static', filename='js/three.min.js') }}"></script>
